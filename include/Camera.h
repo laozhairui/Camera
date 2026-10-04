@@ -1,19 +1,26 @@
+
 #ifndef CAMERA_H
 #define CAMERA_H
-#include <opencv2/opencv.hpp>
+
+#include <opencv2/core.hpp>
+#include <opencv2/videoio.hpp>
+
 class Camera
 {
 public:
     Camera();
     ~Camera();
 
-    bool open();
-    bool start();
-    bool getFrame(cv::Mat& image);
-    bool stop();
-    bool close();
+    bool open(int deviceId = 0);
+    void close();
+
+    bool isOpened() const;
+
+    bool getImage(cv::Mat& image);
+
 private:
-    void* m_handle;
-    bool m_isGrabbing;
+    cv::VideoCapture cap_;
 };
-#endif
+
+#endif // CAMERA_H
+

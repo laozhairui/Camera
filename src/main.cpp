@@ -1,46 +1,42 @@
+
 #include <iostream>
-#include <opencv2/opencv.hpp>
 #include "Camera.h"
+#include <opencv2/highgui.hpp>
+
 int main()
 {
-    std::cout<<"Camera Application Start"<<std::endl;
     Camera camera;
 
     if (!camera.open())
     {
-        std::cout << "Camera open failed!" << std::endl;
+        std::cerr << "Failed to open camera!" << std::endl;
         return -1;
     }
 
     std::cout << "Camera opened successfully!" << std::endl;
+    std::cout << "Press ESC to exit." << std::endl;
 
-    if (!camera.start())
+    cv::Mat frame;
+
+    while (true)
     {
-        std::cout << "Camera start failed!" << std::endl;
-        return -1;
+        if (!camera.getImage(frame))
+        {
+            std::cerr << "Failed to read frame!" << std::endl;
+            break;
+        }
+
+        cv::imshow("Camera", frame);
+
+        if (cv::waitKey(1) == 27)
+        {
+            break;
+        }
     }
 
-    std::cout << "Camera started successfully!" << std::endl;
-
-    cv::Mat image;
-
-    if (camera.getFrame(image))
-    {
-        std::cout << "Frame acquired successfully!" << std::endl;
-        cv::imshow("Camera", image);
-        cv::imwrite("image.png", image);
-        cv::waitKey(0);
-        std::cout << "Image size: "
-                  << image.cols
-                  << " x "
-                  << image.rows
-                  << std::endl;
-    }
-    else
-    {
-        std::cout << "Frame acquisition failed!" << std::endl;
-    }
-    std::cout<<"Camera Application End"<<std::endl;
+    camera.close();
+    cv::destroyAllWindows();
 
     return 0;
 }
+
