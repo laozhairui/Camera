@@ -1,9 +1,15 @@
-
 #include "Camera.h"
+#include "CameraBackend.h"
 
-Camera::Camera()
-{
-}
+#include <memory>
+
+#ifdef CAMERA_BACKEND_OPENCV
+std::unique_ptr<CameraBackend> createOpenCVBackend();
+#elif defined(CAMERA_BACKEND_MVS)
+std::unique_ptr<CameraBackend> createMVSBackend();
+#endif
+
+Camera::Camera() = default;
 
 Camera::~Camera()
 {
@@ -12,29 +18,59 @@ Camera::~Camera()
 
 bool Camera::open(int deviceId)
 {
-    return cap_.open(deviceId, cv::CAP_DSHOW);
+    close();
+    lastError_.clear();
+
+#ifdef CAMERA_BACKEND_OPENCV
+    backend_ = createOpenCVBackend();
+#elif defined(CAMERA_BACKEND_MVS)
+    backend_ = createMVSBackend();
+#else
+    lastError_ = "No camera backend was selected at build time.";
+    return false;
+#endif
+
+    if (!backend_) {
+        lastError_ = "Failed to create camera backend.";
+        return false;
+    }
+
+    if (!backend_->open(deviceId, lastError_)) {
+        backend_.reset();
+        return false;
+    }
+
+    return true;
+}
+
+bool Camera::getImage(cv::Mat& image)
+{
+    if (!isOpened()) {
+        lastError_ = "Camera is not open.";
+        return false;
+    }
+
+    if (!backend_->getImage(image, lastError_)) {
+        return false;
+    }
+
+    return !image.empty();
 }
 
 void Camera::close()
 {
-    if (cap_.isOpened())
-    {
-        cap_.release();
+    if (backend_) {
+        backend_->close();
+        backend_.reset();
     }
 }
 
 bool Camera::isOpened() const
 {
-    return cap_.isOpened();
+    return backend_ && backend_->isOpened();
 }
 
-bool Camera::getImage(cv::Mat& image)
+std::string Camera::lastError() const
 {
-    if (!cap_.isOpened())
-    {
-        return false;
-    }
-
-    return cap_.read(image);
+    return lastError_;
 }
-

@@ -1,3 +1,14 @@
 build/
+cmake-build-*/
+*.exe
+*.dll
+*.so
 *.o
+*.a
+*.jpg
 *.png
+*.mp4
+.vscode/
+.idea/
+
+run/
